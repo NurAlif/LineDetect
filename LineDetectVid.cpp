@@ -113,55 +113,46 @@ int main(int argc, char** argv )
             pt1.y = cvRound(y0 + 1000*(a));
             pt2.x = cvRound(x0 - 1000*(-b));
             pt2.y = cvRound(y0 - 1000*(a));
-            line( finish, pt1, pt2, Scalar(0,0,255), 3, LINE_AA);
+            line( h, pt1, pt2, Scalar(0,0,255), 3, LINE_AA);
         }
 
 
+        
 
 
 
-
-
+/*
         //////////
-        // vector<Vec2f> lines;
         // float thres_theta = 0.05;
+        // float add_theta = 0.5;
         // float thres_rho = 40;
         // vector<Vec2f> group;
+        // vector<int> groupCount;
 
-        // for( size_t i = 0; i < linesP.size(); i++ )
+        // for( size_t i = 0; i < lines.size(); i++ )
         // {
-        //     Vec4i l = linesP[i];
-            
-        //     float x1 = l[0];
-        //     float y1 = l[1];
-        //     float x2 = l[2];
-        //     float y2 = l[3];
+        //     Vec2f current = lines[i];
 
-        //     float lx = x1;
-        //     float ly = y1;
-        //     float hx = x2; 
-        //     float hy = y2;
+        //     bool foundClosest = false;
+        //     for(size_t j = 0; j < group.size(); j++ ){
+        //         Vec2f groupItem = group[j];
+        //         // float deltaRho = abs(groupItem[0] - current[0]);
+        //         float theta = abs(groupItem[1] - current[1]);
+        //         if(theta > thres_theta){
+        //             int count = groupCount[j];
 
-        //     if(x1 > x2){ hx = x1; lx = x2;}
-        //     if(y1 > y2){ hy = y1; ly = y2;}
-
-        //     float dx = hx-lx;
-        //     float dy = hy-ly;
-
-        //     float rho = 
-        //     float theta = atan2f(-y, x)
-
-        //     Vec2f current()
+        //         }
+        //     }
         // }
-
+*/
 
 
 
         // display
 
         namedWindow("Display Image", WINDOW_AUTOSIZE );
-        imshow("Display Image", finish);
-        int key = waitKey(60);
+        imshow("Display Image", h);
+        int key = waitKey(120);
         if (key == 'q')
         {
             cout << "q key is pressed by the user. Stopping the video" << endl;
