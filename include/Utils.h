@@ -5,19 +5,32 @@
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/highgui.hpp"
 
+#define DELTA_COMP_RESULT_A 2
+#define DELTA_COMP_RESULT_B 1
+#define DELTA_COMP_RESULT_NONE -1
+
+
 class Guide{
     public:
         bool start = false;
         int lostCount = 0;
         float startAngle = 0;
         float lastAngle = 0;
-        int rho = 0;
+        int lastRho = 0;
 
         Guide(float start){
             lastAngle = start;
         }
 
     private:
+};
+
+class Cross{
+    public:
+        Guide A = Guide(0);
+        Guide B = Guide(1.57f);
+
+        float rotation = 0;
 };
 
 float delta(float a, float b){
@@ -31,6 +44,32 @@ float delta(float a, float b){
     if(d > CV_PI/2) d = float(CV_PI) - d;
 
     return d;
+}
+
+
+// d < D
+//                  true     false
+int deltaComp(float a, float b, float c, float limit){
+    
+    a += (CV_PI * 3.0f);
+    b += (CV_PI * 3.0f);
+    c += (CV_PI * 3.0f);
+
+    float d = abs(a - b);
+    while(d > CV_PI) d -= float(CV_PI);
+    if(d > CV_PI/2) d = float(CV_PI) - d;
+
+    float D = abs(a - c);
+    while(D > CV_PI) D -= float(CV_PI);
+    if(D > CV_PI/2) D = float(CV_PI) - D;
+
+    if(d <= D){
+        if(d < limit) return DELTA_COMP_RESULT_A;
+        else return DELTA_COMP_RESULT_NONE;
+    }else{
+        if(D < limit) return DELTA_COMP_RESULT_B;
+        else return DELTA_COMP_RESULT_NONE;
+    }
 }
 
 void convertVectorFromPoint(std::vector<cv::Vec2f> src, cv::Point newPoint, std::vector<cv::Vec2f> *result){
@@ -47,8 +86,6 @@ void convertVectorFromPoint(std::vector<cv::Vec2f> src, cv::Point newPoint, std:
 
         float m1 = x0 < 0.00001 && x0 > -0.00001? 99.9 : y0/x0;
         float c1 = newPoint.y - (m1*newPoint.x);
-
-        std::cout << " = " << m << " " << m1 << std::endl;
 
         float b = m-m1;
         
