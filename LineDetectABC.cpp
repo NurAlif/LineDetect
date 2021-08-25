@@ -25,17 +25,17 @@ int main(int argc, char** argv )
     VideoCapture vid_capture("C:/Users/nural/OneDrive/Desktop/linedetect/a.mp4");
 
     if (!vid_capture.isOpened())
-        cout << "Error opening video stream or file" << endl;
+        cout << "Error opening video" << endl;
     else{
-        int fps = vid_capture.get(5);
+        int fps = cvRound(vid_capture.get(5));
         cout << "Frames per second :" << fps;
-        int frame_count = vid_capture.get(CAP_PROP_FRAME_COUNT);
+        int frame_count = cvRound(vid_capture.get(CAP_PROP_FRAME_COUNT));
         cout << "  Frame count :" << frame_count;
     }
 
     int offsetStart = 10;
 
-    Mat image;
+    Mat image, hsv;
     while (vid_capture.isOpened())
     {
         vid_capture.read(image);
@@ -55,18 +55,26 @@ int main(int argc, char** argv )
         Rect myROI(5, 140, image.cols-10, image.rows-280);
         Mat croppedImage = image(myROI);
 
+
+        cvtColor(croppedImage, hsv, COLOR_RGB2HSV);
+        
+        vector<Mat> channels(3);
+        split(hsv, channels);
+        Mat hue = channels[1];
+        
+
         cvtColor(croppedImage, gray_image, COLOR_RGB2GRAY);
-        Canny(gray_image, cannyed_image, 10, 200);
+        Canny(hue, cannyed_image, 10, 200);
         finish = croppedImage.clone();
 
 
-        vector<Vec2f> lines; // will hold the results of the detection
-        HoughLines(cannyed_image, lines, 1, CV_PI/180, 150, 0, 0 ); // runs the actual detection
+        vector<Vec2f> lines, vectLines; 
+        HoughLines(cannyed_image, lines, 1, CV_PI/180, 150, 0, 0 ); 
         // Draw the lines
         
         Vec4f nearestA(A.lastAngle, A.lastAngle, A.lastAngle,10);
         Vec4f nearestB(B.lastAngle, B.lastAngle, B.lastAngle,10);
-        
+        /*
         for( size_t i = 0; i < lines.size(); i++ )
         {
             float rho = lines[i][0], theta = lines[i][1];
@@ -78,50 +86,26 @@ int main(int argc, char** argv )
             pt2.x = cvRound(x0 - 1000*(-b));
             pt2.y = cvRound(y0 - 1000*(a));
 
-
-            float d = delta(nearestA[2], theta);
-            if(d < nearestA[3]){
-                nearestA[3] = d;
-                nearestA[1] = theta;
-                nearestA[0] = rho;
-            }
-
-            d = delta(nearestB[2], theta);
-            if(d < nearestB[3]){
-                nearestB[3] = d;
-                nearestB[1] = theta;
-                nearestB[0] = rho;
-            }
-
-            line( finish, pt1, pt2, Scalar(0,0,255), 3, LINE_AA);
+            line( finish, pt1, pt2, Scalar(0,0,255), 2, LINE_AA);
         }
+        */
 
-        if(nearestA[3] < 0.5f){
-            A.lastAngle = nearestA[1];
 
-            float rho = nearestA[0], theta = nearestA[1];
+        Point origin(cvRound(croppedImage.cols/2),croppedImage.rows);
+        convertVectorFromPoint(lines, origin, &vectLines);
+
+        for( size_t i = 0; i < vectLines.size(); i++ )
+        {
+            float rho = vectLines[i][0], theta = vectLines[i][1];
             Point pt1, pt2;
             double a = cos(theta), b = sin(theta);
             double x0 = a*rho, y0 = b*rho;
-            pt1.x = cvRound(x0 + 1000*(-b));
-            pt1.y = cvRound(y0 + 1000*(a));
-            pt2.x = cvRound(x0 - 1000*(-b));
-            pt2.y = cvRound(y0 - 1000*(a));
+            pt1.x = cvRound(x0 + 1000*(-b)) + origin.x;
+            pt1.y = cvRound(y0 + 1000*(a)) + origin.y;
+            pt2.x = cvRound(x0 - 1000*(-b)) + origin.x;
+            pt2.y = cvRound(y0 - 1000*(a)) + origin.y;
+
             line( finish, pt1, pt2, Scalar(255,0,0), 3, LINE_AA);
-        }
-
-        if(nearestB[3] < 0.5f){
-            B.lastAngle = nearestB[1];
-
-            float rho = nearestB[0], theta = nearestB[1];
-            Point pt1, pt2;
-            double a = cos(theta), b = sin(theta);
-            double x0 = a*rho, y0 = b*rho;
-            pt1.x = cvRound(x0 + 1000*(-b));
-            pt1.y = cvRound(y0 + 1000*(a));
-            pt2.x = cvRound(x0 - 1000*(-b));
-            pt2.y = cvRound(y0 - 1000*(a));
-            line( finish, pt1, pt2, Scalar(55,255,0), 3, LINE_AA);
         }
 
         // display
@@ -130,7 +114,7 @@ int main(int argc, char** argv )
         int key = waitKey(20);
         if (key == 'q')
         {
-            cout << "q key is pressed by the user. Stopping the video" << endl;
+            cout << "q" << endl;
             break;
         }
         if (key == ' ')

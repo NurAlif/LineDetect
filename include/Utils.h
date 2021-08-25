@@ -22,8 +22,8 @@ class Guide{
 
 float delta(float a, float b){
     
-    a += CV_PI * 3.0f;
-    b += CV_PI * 3.0f;
+    a += CV_PI * 3.0;
+    b += CV_PI * 3.0;
 
     float d = abs(a - b);
 
@@ -33,15 +33,39 @@ float delta(float a, float b){
     return d;
 }
 
-float deltaDir(float a, float b){
+void convertVectorFromPoint(std::vector<cv::Vec2f> src, cv::Point newPoint, std::vector<cv::Vec2f> *result){
     
-    a += CV_PI * 3.0f;
-    b += CV_PI * 3.0f;
+    for( size_t i = 0; i < src.size(); i++ ){
+        float rho = src[i][0];
+        float theta = src[i][1];
 
-    float d = abs(a - b);
+        float x0 = rho * std::cosf(theta);
+        float y0 = rho * std::sinf(theta);
 
-    while(d > CV_PI) d -= float(CV_PI);
-    if(d > CV_PI/2) d = float(CV_PI) - d;
+        float m = y0 < 0.00001 && y0 > -0.00001? 99.9 : -x0/y0;
+        float c = y0 - (m*x0);
 
-    return d;
+        float m1 = x0 < 0.00001 && x0 > -0.00001? 99.9 : y0/x0;
+        float c1 = newPoint.y - (m1*newPoint.x);
+
+        std::cout << " = " << m << " " << m1 << std::endl;
+
+        float b = m-m1;
+        
+        float x = (c1-c)/b; 
+        float y = ((m1*c)-(m*c1))/b;
+        
+        if(b < 0.00001 && b > -0.00001) {
+            x = 99.0;
+            y = 99.0;
+        }
+        
+
+        float dx = x - newPoint.x;
+        float dy = -y - newPoint.y;
+
+
+        cv::Vec2f newLine(sqrtf(dx*dx + dy*dy), atan2f(dy, dx));
+        result->push_back(newLine);
+    }
 }
