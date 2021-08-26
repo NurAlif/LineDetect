@@ -14,25 +14,51 @@ class Guide{
     public:
         float lastTheta = 0;
         int lastRho = 0;
+
+        float getValMultiplier = 0.8;
+        float getVal2Multiplier = 0.2;
         
         float limitDeltaRho = 100;
         float limitDeltaTheta = 0.5;
 
+        int estTheta = 0;
+        int estRho = 0;
+
         bool blinded = false;
         float currentDeltaRho = 0;
         float currentDeltaTheta = 0;
-        float currentClosestRho = 0;
-        float currentClosestTheta = 0;
+        cv::Vec2f currentClosest;
         bool found = false;
 
-        void process(){
+        void apply(){
             if(found){
-                lastTheta = currentClosestTheta;
-                lastRho = currentClosestRho;
-
+                lastTheta = currentClosest[1]*getValMultiplier + lastTheta*getVal2Multiplier;
+                lastRho = currentClosest[0]*getValMultiplier + lastRho*getVal2Multiplier;
+            }else{
+                lastTheta = estTheta;
+                lastRho = estRho;
             }
         }
 
+        float getEstimationRho(){
+            return lastRho;
+        }
+
+        float getEstimationTheta(){
+            return lastTheta;
+        }
+
+        void reset(){
+            found = false;
+            currentDeltaRho = 500;
+            currentDeltaTheta = 10;
+            currentClosest[0] = 0;
+            currentClosest[1] = 0; 
+        }
+
+        void setNewClosest(cv::Vec2f newClosest){
+            currentClosest = newClosest;
+        }
 
         Guide(float start){
             lastTheta = start;
@@ -45,7 +71,10 @@ class Cross{
     public:
         Guide A = Guide(0);
         Guide B = Guide(1.57f);
-        Guide C = Guide(0);
+        Guide pole = Guide(0);
+
+        bool enaPoleDetect = false;
+        bool poleFound = false;
 
         float rotation = 0;
 };
