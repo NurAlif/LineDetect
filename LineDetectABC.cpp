@@ -15,9 +15,11 @@ using namespace std;
 
 Mat gray_image, cannyed_image, finish, gradient;
 
-Guide A(0);
+Guide A(-0.3f);
 Guide B(1.57f);
 Guide C(0);
+
+float ABDiff = 0;
 
 int phase = 0;
 
@@ -79,7 +81,7 @@ int main(int argc, char** argv )
 
     */
 
-    VideoCapture vid_capture("C:/Users/nural/Downloads/a.mp4");
+    VideoCapture vid_capture("C:/Users/nural/OneDrive/Desktop/linedetect/a.mp4");
 
     int frame_counter, frame_count;
     frame_count = cvRound(vid_capture.get(CAP_PROP_FRAME_COUNT));
@@ -93,15 +95,12 @@ int main(int argc, char** argv )
     }
 
     int offsetStart = 10;
+    vid_capture.set(CAP_PROP_POS_FRAMES, offsetStart);
+    frame_counter = offsetStart;
 
     Mat image, hsv, filtered;
     while (vid_capture.isOpened()){
 
-        frame_counter++;
-        if (frame_counter >= frame_count-1){
-            frame_counter = 0;
-            vid_capture.set(CAP_PROP_POS_FRAMES, 0);
-        }
 
         vid_capture.read(image);
         if ( !image.data )
@@ -110,15 +109,22 @@ int main(int argc, char** argv )
             return -1;
         }
 
-        if(offsetStart > 0){
-            offsetStart--;
-            continue;
+        // repeat
+        frame_counter++;
+        if (frame_counter >= frame_count-1){
+            frame_counter = offsetStart;
+            vid_capture.set(CAP_PROP_POS_FRAMES, offsetStart);
+        }
+
+        // start
+        if(frame_counter == offsetStart+1){
+
         }
 
         rotate(image, image, ROTATE_90_COUNTERCLOCKWISE);
         
         Rect myROI(5, 140, image.cols-10, image.rows-280);
-        Mat croppedImage = image;
+        Mat croppedImage = image(myROI);
 
 
         cvtColor(croppedImage, hsv, COLOR_RGB2HSV);
@@ -146,8 +152,8 @@ int main(int argc, char** argv )
 
 
         //             last Rho   last Angle    delta closest    closest
-        Vec6f nearestA(A.lastRho, A.lastAngle,  1000   , 10,     A.lastRho, A.lastAngle);
-        Vec6f nearestB(B.lastRho, B.lastAngle,  1000   , 10,     B.lastRho, B.lastAngle);
+        Vec6f nearestA(A.lastRho, A.lastTheta,  1000   , 10,     A.lastRho, A.lastTheta);
+        Vec6f nearestB(B.lastRho, B.lastTheta,  1000   , 10,     B.lastRho, B.lastTheta);
 
         //clusterA vs B
         vector<Vec2f> ACluster; 
@@ -164,7 +170,10 @@ int main(int argc, char** argv )
             pt1.y = cvRound(y0 + 1000*(a)) + origin.y;
             pt2.x = cvRound(x0 - 1000*(-b)) + origin.x;
             pt2.y = cvRound(y0 - 1000*(a)) + origin.y;
-            int testComp = deltaComp(theta, A.lastAngle, B.lastAngle, 0.5);
+
+            if(rho > 250) continue;
+
+            int testComp = deltaComp(theta, A.lastTheta, B.lastTheta, 0.6);
             if(testComp > 0){
                 if(testComp == DELTA_COMP_RESULT_A){
                     ACluster.push_back(vectLines[i]);
@@ -182,6 +191,8 @@ int main(int argc, char** argv )
 
             float d = abs(rho - nearestA[0]);
 
+            if(d > 100) continue;
+
             if( d < nearestA[2]){
                 nearestA[4] = rho;
                 nearestA[5] = ACluster[i][1];
@@ -194,7 +205,7 @@ int main(int argc, char** argv )
 
             float d = abs(rho - nearestB[0]);
 
-            if(d > 200) continue;
+            if(d > 100) continue;
 
             if( d < nearestB[2]){
                 nearestB[4] = rho;
@@ -203,10 +214,10 @@ int main(int argc, char** argv )
             }
         }
 
-        A.lastAngle = nearestA[5];
+        A.lastTheta = nearestA[5];
         A.lastRho = nearestA[4];
 
-        B.lastAngle = nearestB[5];
+        B.lastTheta = nearestB[5];
         B.lastRho = nearestB[4];
 
 
@@ -244,7 +255,7 @@ int main(int argc, char** argv )
         }
         if (key == ' ')
         {
-            cout << "pause" << endl;
+            cout << "pause : " << frame_counter << endl;
             while(true){
                 int key2 = waitKey(60);
                 if(key2 == ' ') break;

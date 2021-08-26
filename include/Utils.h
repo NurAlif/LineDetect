@@ -12,14 +12,30 @@
 
 class Guide{
     public:
-        bool start = false;
-        int lostCount = 0;
-        float startAngle = 0;
-        float lastAngle = 0;
+        float lastTheta = 0;
         int lastRho = 0;
+        
+        float limitDeltaRho = 100;
+        float limitDeltaTheta = 0.5;
+
+        bool blinded = false;
+        float currentDeltaRho = 0;
+        float currentDeltaTheta = 0;
+        float currentClosestRho = 0;
+        float currentClosestTheta = 0;
+        bool found = false;
+
+        void process(){
+            if(found){
+                lastTheta = currentClosestTheta;
+                lastRho = currentClosestRho;
+
+            }
+        }
+
 
         Guide(float start){
-            lastAngle = start;
+            lastTheta = start;
         }
 
     private:
@@ -29,6 +45,7 @@ class Cross{
     public:
         Guide A = Guide(0);
         Guide B = Guide(1.57f);
+        Guide C = Guide(0);
 
         float rotation = 0;
 };
