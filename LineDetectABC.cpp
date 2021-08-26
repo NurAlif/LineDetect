@@ -81,7 +81,7 @@ int main(int argc, char** argv )
 
     */
 
-    VideoCapture vid_capture("C:/Users/nural/OneDrive/Desktop/linedetect/a.mp4");
+    VideoCapture vid_capture("C:/Users/nural/Downloads/b.mp4");
 
     int frame_counter, frame_count;
     frame_count = cvRound(vid_capture.get(CAP_PROP_FRAME_COUNT));
@@ -94,7 +94,7 @@ int main(int argc, char** argv )
         cout << "  Frame count :" << frame_count;
     }
 
-    int offsetStart = 10;
+    int offsetStart = 300;
     vid_capture.set(CAP_PROP_POS_FRAMES, offsetStart);
     frame_counter = offsetStart;
 
@@ -121,10 +121,10 @@ int main(int argc, char** argv )
 
         }
 
-        rotate(image, image, ROTATE_90_COUNTERCLOCKWISE);
+        // rotate(image, image, ROTATE_90_COUNTERCLOCKWISE);
         
         Rect myROI(5, 140, image.cols-10, image.rows-280);
-        Mat croppedImage = image(myROI);
+        Mat croppedImage = image;
 
 
         cvtColor(croppedImage, hsv, COLOR_RGB2HSV);
@@ -171,7 +171,7 @@ int main(int argc, char** argv )
             pt2.x = cvRound(x0 - 1000*(-b)) + origin.x;
             pt2.y = cvRound(y0 - 1000*(a)) + origin.y;
 
-            if(rho > 250) continue;
+            // if(rho > 250) continue;
 
             int testComp = deltaComp(theta, A.lastTheta, B.lastTheta, 0.6);
             if(testComp > 0){
@@ -190,8 +190,6 @@ int main(int argc, char** argv )
             float rho = ACluster[i][0];
 
             float d = abs(rho - nearestA[0]);
-
-            if(d > 100) continue;
 
             if( d < nearestA[2]){
                 nearestA[4] = rho;
@@ -256,6 +254,7 @@ int main(int argc, char** argv )
         if (key == ' ')
         {
             cout << "pause : " << frame_counter << endl;
+            cout << "nearestB Theta : " << nearestA[1] << endl;
             while(true){
                 int key2 = waitKey(60);
                 if(key2 == ' ') break;

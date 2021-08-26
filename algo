@@ -1,0 +1,30 @@
+walk align line (align theta for direction, rho for distance) ,detect horizontal rho
+horizontal rho trigger: calculate last trajectory, camera down, detect horizontal rho
+horizontal rho trigger: turn right, [
+    lineB = detectLine( lowest theta )
+    findPair(lineB){ deltaTheta[current] < tolerance}
+    getcenterline(explicit(a,c))
+
+    lineBorder = detectLine( point-zero lowest abs(rho), lower than range)
+    linePole = detectLine( biggest theta)
+    
+    lineA = detectLine( deltaTheta[lineB] < PI/2 )
+    findPair(lineA){ deltaTheta[current] < tolerance}
+    getcenterline(explicit(a,c))
+
+
+    if(lineBorder)
+        more Turn
+
+    if(lineB){
+
+        if(lineA)
+            if(lineAtheta < trigger)
+                triggerReturn
+        if(linePole)
+            away
+
+    }
+]
+return
+

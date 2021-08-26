@@ -76,6 +76,12 @@ class Cross{
         bool enaPoleDetect = false;
         bool poleFound = false;
 
+        bool findPole(){
+            if(!enaPoleDetect) return false;
+
+            
+        }
+
         float rotation = 0;
 };
 
