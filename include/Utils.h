@@ -12,17 +12,15 @@
 
 class Guide{
     public:
-        float lastTheta = 0;
-        int lastRho = 0;
 
-        float getValMultiplier = 0.8;
-        float getVal2Multiplier = 0.2;
+        float lastTheta;
+        float lastRho;
+
+        float getValMultiplier = (float)0.8;
+        float getVal2Multiplier = (float)0.2;
         
         float limitDeltaRho = 100;
         float limitDeltaTheta = 0.5;
-
-        int estTheta = 0;
-        int estRho = 0;
 
         bool blinded = false;
         float currentDeltaRho = 0;
@@ -32,57 +30,35 @@ class Guide{
 
         void apply(){
             if(found){
-                lastTheta = currentClosest[1]*getValMultiplier + lastTheta*getVal2Multiplier;
-                lastRho = currentClosest[0]*getValMultiplier + lastRho*getVal2Multiplier;
-            }else{
-                lastTheta = estTheta;
-                lastRho = estRho;
+                float theta2 = lastTheta * getVal2Multiplier;
+                float rho2 = lastRho * getVal2Multiplier;
+                lastTheta = (currentClosest[1]*getValMultiplier) + theta2;
+                lastRho = (currentClosest[0]*getValMultiplier) + rho2;
             }
         }
 
-        float getEstimationRho(){
-            return lastRho;
-        }
-
-        float getEstimationTheta(){
-            return lastTheta;
+        cv::Vec2f getVect(){
+            return cv::Vec2f(lastRho, lastTheta);
         }
 
         void reset(){
             found = false;
-            currentDeltaRho = 500;
-            currentDeltaTheta = 10;
-            currentClosest[0] = 0;
-            currentClosest[1] = 0; 
+            currentClosest[0] = 1000;
+            currentClosest[1] = 0;
         }
 
         void setNewClosest(cv::Vec2f newClosest){
+            found = true;
             currentClosest = newClosest;
         }
 
         Guide(float start){
             lastTheta = start;
+            lastRho = 0;
         }
 
     private:
-};
-
-class Cross{
-    public:
-        Guide A = Guide(0);
-        Guide B = Guide(1.57f);
-        Guide pole = Guide(0);
-
-        bool enaPoleDetect = false;
-        bool poleFound = false;
-
-        bool findPole(){
-            if(!enaPoleDetect) return false;
-
-            
-        }
-
-        float rotation = 0;
+        cv::Vec2f lastPolar;
 };
 
 float delta(float a, float b){
@@ -122,6 +98,25 @@ int deltaComp(float a, float b, float c, float limit){
         if(D < limit) return DELTA_COMP_RESULT_B;
         else return DELTA_COMP_RESULT_NONE;
     }
+}
+
+void drawLinesFromPolar(cv::Mat *src, cv::Vec2f polarCoord, cv::Point origin, cv::Scalar color){
+    float rho = polarCoord[0];
+    float theta = polarCoord[1];
+
+    cv::Point pt1, pt2;
+    double a = cos(theta), b = sin(theta);
+    double x0 = a*rho, y0 = b*rho;
+    pt1.x = cvRound(x0 + 1000*(-b)) + origin.x;
+    pt1.y = cvRound(y0 + 1000*(a)) + origin.y;
+    pt2.x = cvRound(x0 - 1000*(-b)) + origin.x;
+    pt2.y = cvRound(y0 - 1000*(a)) + origin.y;
+
+    cv::line( *src, pt1, pt2, color, 2, cv::LINE_AA);
+}
+
+void writeTextOnFrame(cv::Mat *src, char *text, cv::Point pos, cv::Scalar color){
+    cv::putText(*src, text, pos, cv::FONT_HERSHEY_PLAIN, 2, color, 2, cv::LINE_AA);
 }
 
 void convertVectorFromPoint(std::vector<cv::Vec2f> src, cv::Point newPoint, std::vector<cv::Vec2f> *result){

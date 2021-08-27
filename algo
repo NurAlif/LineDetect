@@ -1,12 +1,24 @@
 
 
 PHASE_APPROACH_1
+A : theta < 0 && biggest
+pole : theta > 0 && biggest
+B : theta >< 1.57 && lowest
+
 walk align line (align theta for direction, rho for distance) ,detect horizontal rho
 
 PHASE_APPROACH_2
+A : theta < 0 
+pole : theta > 0
+B : theta >< 1.57
+
 walk align line (align theta for direction, rho for distance) ,detect horizontal rho
 
 PHASE_APPROACH_FINAL
+A : theta < 0 (blinded)
+pole : theta > 0 (blinded)
+B : theta >< 1.57
+
 horizontal rho trigger: calculate last trajectory, camera down, detect horizontal rho
 
 PHASE_TURN_AROUND

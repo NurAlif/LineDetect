@@ -14,7 +14,7 @@ using namespace std;
 int main(int argc, char** argv )
 {
 
-    VideoCapture vid_capture("C:/Users/nural/OneDrive/Desktop/linedetect/b.mp4");
+    VideoCapture vid_capture("C:/Users/nural/Downloads/b.mp4");
 
     int frame_counter, frame_count;
     frame_count = cvRound(vid_capture.get(CAP_PROP_FRAME_COUNT));
@@ -35,7 +35,7 @@ int main(int argc, char** argv )
 
     Mat image;
     while (vid_capture.isOpened()){
-
+        lf.reset();
 
         vid_capture.read(image);
         if ( !image.data )
@@ -44,7 +44,6 @@ int main(int argc, char** argv )
             return -1;
         }
 
-        LineFollower lf = LineFollower(&vid_capture);
 
         // repeat
         frame_counter++;
@@ -61,6 +60,7 @@ int main(int argc, char** argv )
         // process
         lf.processImage(&image);
         lf.drawLines();
+        lf.prosessLines();
 
 
 

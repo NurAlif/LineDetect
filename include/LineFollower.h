@@ -2,7 +2,7 @@
 #include <iostream>
 #include <chrono>
 #include <ctime>   
-#include <sys/time.h>
+// #include <sys/time.h>
 #include <opencv2/opencv.hpp>
 #include "opencv2/imgproc.hpp"
 #include "opencv2/imgcodecs.hpp"
@@ -18,6 +18,12 @@
 
 class LineFollower{
     public:
+        // guides
+        Guide A = Guide(0);
+        Guide B = Guide(-1.57);
+        Guide pole = Guide(0);
+
+
         LineFollower(cv::VideoCapture *video){
             vcap = video;
             frame_width  = (int)vcap->get(cv::CAP_PROP_FRAME_WIDTH);
@@ -31,7 +37,9 @@ class LineFollower{
             
             // rotate(image, image, ROTATE_90_COUNTERCLOCKWISE);
             // cv::Rect myROI(5, 140, rawImage.cols-10, image.rows-280);
+            cv::Rect myROI(0, 0, rawImage->cols, rawImage->rows-2);
             mat_input = *rawImage;
+            mat_input = mat_input(myROI);
             cvtColor(mat_input, mat_hsv, cv::COLOR_RGB2HSV);
             // cvtColor(croppedImage, gray_image, COLOR_RGB2GRAY);
         
@@ -66,26 +74,164 @@ class LineFollower{
         }
 
         void prosessLines(){
-            // loop
+            
+            time_t now = time(nullptr) * 1000;
             switch (phase)
             {
             case PHASE_APPROACH_1:
-                
+                {
 
-                if(approach1finished){
-                    time_t now = time(nullptr);
-                    time_t mnow = now * 1000;
+                A.reset();
+                B.reset();
+
+                size_t lenLine = vectLines.size();
+
+                float biggestTheta = -2;
+                for(size_t i = 0; i < lenLine; i++){
+                    float rho = vectLines[i][0];
+                    float theta = vectLines[i][1];
+
+                    if(theta > 0){
+                        //pole
+                        continue;
+                    }
+
+                    if(delta(theta, B.lastTheta) < 0.4 && rho < B.currentClosest[0]){
+                        B.setNewClosest(vectLines[i]);
+                        continue;
+                    }
+
+                    if(theta > biggestTheta && theta > -0.5){
+                        A.setNewClosest(vectLines[i]);
+                        biggestTheta = theta;
+                        continue;
+                    }
+                        
+                }
+                
+                A.apply();
+                B.apply();
+
+                drawLinesFromPolar(&mat_finish, A.getVect(), origin, cv::Scalar(0,255,255));
+                drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
+
+                if(B.lastRho < appr1MinRhoTrigger){
+                    approach2finished = true;
                 }
 
-                break;
+                // if(approach1finished){
+                //     time_t now = time(nullptr);
+                //     time_t mnow = now * 1000;
+                // }
+
+                }break;
             case PHASE_APPROACH_2:
+                {
+                    // if(approach1finished){
 
-                break;
+                    // }break;
+
+                    A.reset();
+                    B.reset();
+
+                    size_t lenLine = vectLines.size();
+
+                    float biggestTheta = -2;
+                    for(size_t i = 0; i < lenLine; i++){
+                        float rho = vectLines[i][0];
+                        float theta = vectLines[i][1];
+
+                        if(theta > 0){
+                            //pole
+                            continue;
+                        }
+
+                        if(delta(theta, B.lastTheta) < 0.4 && rho < B.currentClosest[0]){
+                            B.setNewClosest(vectLines[i]);
+                            continue;
+                        }
+
+                        if(theta > biggestTheta && theta > -0.5){
+                            A.setNewClosest(vectLines[i]);
+                            biggestTheta = theta;
+                            continue;
+                        }
+                            
+                    }
+                    
+                    A.apply();
+                    B.apply();
+
+                    drawLinesFromPolar(&mat_finish, A.getVect(), origin, cv::Scalar(0,255,255));
+                    drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
+
+                    if(B.lastRho < appr2MinRhoTrigger){
+                        phase = PHASE_APPROACH_FINAL;
+                    }
+
+
+                }break;
             case PHASE_APPROACH_FINAL:
+                {
+                    B.reset();
 
+                    size_t lenLine = vectLines.size();
+
+                    float biggestTheta = -2;
+                    for(size_t i = 0; i < lenLine; i++){
+                        float rho = vectLines[i][0];
+                        float theta = vectLines[i][1];
+
+                        if(theta > 0){
+                            //pole
+                            continue;
+                        }
+
+                        if(delta(theta, B.lastTheta) < 0.4 && rho < B.currentClosest[0]){
+                            B.setNewClosest(vectLines[i]);
+                            continue;
+                        }   
+                    }
+                    B.apply();
+
+                    drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
+
+                    if(B.lastRho < apprFinalMinRhoTrigger){
+                        phase = PHASE_TURN_AROUND;
+                    }
+                }
                 break;
             case PHASE_TURN_AROUND:
+                {
+                    B.reset();
+                    A.reset();
+                    pole.reset();
 
+                    size_t lenLine = vectLines.size();
+
+                    float biggestTheta = -2;
+                    for(size_t i = 0; i < lenLine; i++){
+                        float rho = vectLines[i][0];
+                        float theta = vectLines[i][1];
+
+                        if(theta > biggestTheta){
+                            //pole
+                            biggestTheta = theta;
+                            pole.setNewClosest(vectLines[i]);
+                        }
+
+                        if(  < B.currentClosest[1]){
+                            B.setNewClosest(vectLines[i]);
+                        }
+                    }
+                    B.apply();
+
+                    drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
+
+                    if(B.lastRho < apprFinalMinRhoTrigger){
+                        phase = PHASE_TURN_AROUND;
+                    }
+                }
                 break;
             case PHASE_IDLE:
 
@@ -94,10 +240,19 @@ class LineFollower{
             default:
                 break;
             }
+            char str[200];
+            sprintf(str,"  PHASE : %d", phase);
+
+            writeTextOnFrame(&mat_finish, str, cv::Point(cvRound(frame_width/2)-90, 30), cv::Scalar(255,255,255));
         }
 
         cv::Mat getfinishMat(){
             return mat_finish;
+        }
+
+        void reset(){
+            lines.clear();
+            vectLines.clear();
         }
 
     private:
@@ -110,17 +265,15 @@ class LineFollower{
         int frame_height = 0;
         int frame_width = 0;
 
-        // guides
-        Guide A = Guide(0);
-        Guide B = Guide(0);
-        Guide pole = Guide(0);
-
         // approach
         float approachRhoTarget = 0;
         float approachThetaTarget = 0;
 
         bool approach1finished = false;
-        float minRhoTrigger = 30;
+        bool approach2finished = false;
+        float appr1MinRhoTrigger = 30;
+        float appr2MinRhoTrigger = 200;
+        float apprFinalMinRhoTrigger = 30;
         time_t waitPassMid = 5;
         time_t waitPassMidStart = 0;
 
