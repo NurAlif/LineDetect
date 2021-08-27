@@ -198,6 +198,7 @@ class LineFollower{
 
                     if(B.lastRho < apprFinalMinRhoTrigger){
                         phase = PHASE_TURN_AROUND;
+                        B.lastTheta = -0.1;
                     }
                 }
                 break;
@@ -220,13 +221,18 @@ class LineFollower{
                             pole.setNewClosest(vectLines[i]);
                         }
 
-                        if(  < B.currentClosest[1]){
+                        if( delta(theta, B.lastTheta) < 0.25f){
                             B.setNewClosest(vectLines[i]);
                         }
                     }
                     B.apply();
 
+                    if(B.found){
+                        pole.apply();
+                    }
+
                     drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
+                    drawLinesFromPolar(&mat_finish, pole.getVect(), origin, cv::Scalar(255,0,255));
 
                     if(B.lastRho < apprFinalMinRhoTrigger){
                         phase = PHASE_TURN_AROUND;
@@ -279,6 +285,7 @@ class LineFollower{
 
 
         // turn arround
+
 
 
         // prosess
