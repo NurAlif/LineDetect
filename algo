@@ -1,5 +1,15 @@
+
+
+PHASE_APPROACH_1
 walk align line (align theta for direction, rho for distance) ,detect horizontal rho
+
+PHASE_APPROACH_2
+walk align line (align theta for direction, rho for distance) ,detect horizontal rho
+
+PHASE_APPROACH_FINAL
 horizontal rho trigger: calculate last trajectory, camera down, detect horizontal rho
+
+PHASE_TURN_AROUND
 horizontal rho trigger: turn right, [
     lineB = detectLine( lowest theta )
     findPair(lineB){ deltaTheta[current] < tolerance}
@@ -26,5 +36,6 @@ horizontal rho trigger: turn right, [
 
     }
 ]
-return
+
+PHASE_RETURN
 

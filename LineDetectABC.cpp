@@ -6,10 +6,6 @@
 #include "opencv2/highgui.hpp"
 #include "Utils.h"
 
-#define PHASE_TURN_AROUND = 1
-#define PHASE_APPROACH = 0
-#define PHASE_RETURN = 2
-
 using namespace cv;
 using namespace std;
 
@@ -81,7 +77,7 @@ int main(int argc, char** argv )
 
     */
 
-    VideoCapture vid_capture("C:/Users/nural/Downloads/b.mp4");
+    VideoCapture vid_capture("C:/Users/nural/OneDrive/Desktop/linedetect/b.mp4");
 
     int frame_counter, frame_count;
     frame_count = cvRound(vid_capture.get(CAP_PROP_FRAME_COUNT));
