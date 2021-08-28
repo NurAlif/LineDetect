@@ -27,9 +27,11 @@ class Guide{
         float currentDeltaTheta = 0;
         cv::Vec2f currentClosest;
         bool found = false;
+        bool applied = false;
 
         void apply(){
             if(found){
+                applied = true;
                 float theta2 = lastTheta * getVal2Multiplier;
                 float rho2 = lastRho * getVal2Multiplier;
                 lastTheta = (currentClosest[1]*getValMultiplier) + theta2;
@@ -43,6 +45,7 @@ class Guide{
 
         void reset(){
             found = false;
+            applied = false;
             currentClosest[0] = 1000;
             currentClosest[1] = 0;
         }

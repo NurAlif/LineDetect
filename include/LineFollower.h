@@ -173,6 +173,15 @@ class LineFollower{
                 }break;
             case PHASE_APPROACH_FINAL:
                 {
+                    if(approachFinalFinished){
+                        if(now-waitPassFinalStart > waitPassFinal){
+                            phase = PHASE_TURN_AROUND;
+                            B.lastTheta = -0.1;
+                            A.lastTheta = -0.1;
+                        }
+                        break;
+                    }
+
                     B.reset();
 
                     size_t lenLine = vectLines.size();
@@ -197,16 +206,82 @@ class LineFollower{
                     drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
 
                     if(B.lastRho < apprFinalMinRhoTrigger){
-                        phase = PHASE_TURN_AROUND;
-                        B.lastTheta = -0.1;
+                        approachFinalFinished = true;
+                        waitPassFinalStart = now;
                     }
                 }
                 break;
             case PHASE_TURN_AROUND:
                 {
+                    if(turnFinished){
+                        if(now-waitPassTurnStart > waitPassTurn){
+                            phase = PHASE_RETURN;
+                        }
+                        break;
+                    }
+
+
                     B.reset();
                     A.reset();
                     pole.reset();
+
+                    size_t lenLine = vectLines.size();
+
+                    std::vector<cv::Vec2f> clusterB;
+
+                    float biggestTheta = -2;
+                    for(size_t i = 0; i < lenLine; i++){
+                        float rho = vectLines[i][0];
+                        float theta = vectLines[i][1];
+
+                        float rho0 = lines[i][0];
+                        float theta0 = rho0 < 0? -lines[i][1] : lines[i][1];
+                        rho0 = abs(rho0);
+
+                        if(theta0 < thetaPoleMax && theta0 > thetaPoleMin){
+                            pole.setNewClosest(vectLines[i]);
+                            continue;
+                        }
+
+                        if(theta < 0 && theta > -1.4 && theta > biggestTheta){
+                            biggestTheta = theta;
+                            A.setNewClosest(vectLines[i]);
+                        }
+
+                        if( delta(theta, B.lastTheta) < 0.25f){
+                            B.setNewClosest(vectLines[i]);
+                            // clusterB.push_back(vectLines[i]);
+                        }
+                    }
+
+                    B.apply();
+                    if(delta(B.lastTheta, A.currentClosest[1]) > deltaABMin) A.apply();
+                    // if(B.found){
+                    //     if(delta(B.lastTheta, A.currentClosest[1]) > deltaABMin){
+                    //     }
+                    //     pole.apply();
+                    // }
+                    
+                    if(delta(B.lastTheta, pole.currentClosest[1]) > 0.1) 
+                    pole.apply();
+
+
+                    if(B.found) drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
+                    if(A.applied) {
+                        drawLinesFromPolar(&mat_finish, A.getVect(), origin, cv::Scalar(0,255,0));
+                    }
+                    if(pole.found)drawLinesFromPolar(&mat_finish, pole.getVect(), origin, cv::Scalar(255,255,0));
+
+                    if(B.lastRho < turnMinRhoTrigger){
+                        std::cout << "triggered" << std::endl;
+                        turnFinished = true;
+                        waitPassTurnStart = now;
+                    }
+                }
+                break;
+            case PHASE_RETURN:
+                {
+                    A.reset();
 
                     size_t lenLine = vectLines.size();
 
@@ -215,30 +290,18 @@ class LineFollower{
                         float rho = vectLines[i][0];
                         float theta = vectLines[i][1];
 
-                        if(theta > biggestTheta){
-                            //pole
-                            biggestTheta = theta;
-                            pole.setNewClosest(vectLines[i]);
+                        if(delta(theta, A.lastTheta) < 0.4 && rho < A.currentClosest[0]){
+                            A.setNewClosest(vectLines[i]);
+                            continue;
                         }
-
-                        if( delta(theta, B.lastTheta) < 0.25f){
-                            B.setNewClosest(vectLines[i]);
-                        }
+                            
                     }
-                    B.apply();
+                    
+                    A.apply();
 
-                    if(B.found){
-                        pole.apply();
-                    }
+                    drawLinesFromPolar(&mat_finish, A.getVect(), origin, cv::Scalar(0,255,255));
 
-                    drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
-                    drawLinesFromPolar(&mat_finish, pole.getVect(), origin, cv::Scalar(255,0,255));
-
-                    if(B.lastRho < apprFinalMinRhoTrigger){
-                        phase = PHASE_TURN_AROUND;
-                    }
-                }
-                break;
+                }break;
             case PHASE_IDLE:
 
                 break;
@@ -277,15 +340,24 @@ class LineFollower{
 
         bool approach1finished = false;
         bool approach2finished = false;
+        bool approachFinalFinished = false;
         float appr1MinRhoTrigger = 30;
         float appr2MinRhoTrigger = 200;
         float apprFinalMinRhoTrigger = 30;
         time_t waitPassMid = 5;
         time_t waitPassMidStart = 0;
+        time_t waitPassFinal = 2000;
+        time_t waitPassFinalStart = 0;
 
 
         // turn arround
-
+        float deltaABMin = 0.5;
+        float thetaPoleMin = 0.15;
+        float thetaPoleMax = 1.2;
+        float turnMinRhoTrigger = 40;
+        time_t waitPassTurn = 3;
+        time_t waitPassTurnStart = 0;
+        bool turnFinished = false;
 
 
         // prosess
