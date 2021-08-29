@@ -80,50 +80,61 @@ class LineFollower{
             {
             case PHASE_APPROACH_1:
                 {
+                    // if(approach1finished){
 
-                A.reset();
-                B.reset();
+                    // }break;
 
-                size_t lenLine = vectLines.size();
+                    A.reset();
+                    B.reset();
 
-                float biggestTheta = -2;
-                std::vector<cv::Vec2f> clusterA;
-                for(size_t i = 0; i < lenLine; i++){
-                    float rho = vectLines[i][0];
-                    float theta = vectLines[i][1];
+                    size_t lenLine = vectLines.size();
 
-                    // if(theta > 0){
-                    //     //pole
-                    //     continue;
-                    // }
+                    cv::Vec2f X = cv::Vec2f(0, -2);
 
-                    if(delta(theta, B.lastTheta) < 0.4 && rho < B.currentClosest[0]){
-                        B.setNewClosest(vectLines[i]);
-                        continue;
+                    float biggestTheta = -2;
+                    for(size_t i = 0; i < lenLine; i++){
+                        float rho = vectLines[i][0];
+                        float theta = vectLines[i][1];
+
+                        if(delta(theta, B.lastTheta) < 0.4 && rho < B.currentClosest[0]){
+                            B.setNewClosest(vectLines[i]);
+                            continue;
+                        }
+
+                        if(theta > X[1]){
+                            X = vectLines[i];
+                        }
+                            
                     }
 
-                    if(theta > biggestTheta){
-                        A.setNewClosest(vectLines[i]);
-                        biggestTheta = theta;
-                        continue;
+                    // A pair check
+                    bool isXA = false;
+                    for(size_t i = 0; i < lenLine; i++){
+                        float rho = vectLines[i][0];
+                        float theta = vectLines[i][1];
+
+                        if(delta(theta, X[1]) > 0.15) continue;
+
+                        if(abs(X[0] - rho) > 2 && abs(X[0] - rho) < 130) {
+                            A.setNewClosest(X);
+                            isXA = true;
+                            break;
+                        }
                     }
-                        
-                }
-                
-                A.apply();
-                B.apply();
 
-                drawLinesFromPolar(&mat_finish, A.getVect(), origin, cv::Scalar(0,255,255));
-                drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
+                    B.apply();
+                    
+                    if(delta(A.currentClosest[1], B.currentClosest[1]) > 0.3)
+                        A.apply();
 
-                if(B.lastRho < appr1MinRhoTrigger){
-                    approach2finished = true;
-                }
 
-                // if(approach1finished){
-                //     time_t now = time(nullptr);
-                //     time_t mnow = now * 1000;
-                // }
+                    drawLinesFromPolar(&mat_finish, A.getVect(), origin, cv::Scalar(0,255,255));
+                    drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
+
+                    if(B.lastRho < appr2MinRhoTrigger){
+                        phase = PHASE_APPROACH_FINAL;
+                        origin = cv::Point(frame_width/2, frame_height);
+                    }
 
                 }break;
             case PHASE_APPROACH_2:
@@ -161,7 +172,7 @@ class LineFollower{
                         float rho = vectLines[i][0];
                         float theta = vectLines[i][1];
 
-                        if(delta(theta, X[1]) > 0.1) continue;
+                        if(delta(theta, X[1]) > 0.15) continue;
 
                         if(abs(X[0] - rho) > 2 && abs(X[0] - rho) < 130) {
                             A.setNewClosest(X);
@@ -222,6 +233,7 @@ class LineFollower{
 
                     if(B.lastRho < apprFinalMinRhoTrigger){
                         std::cout << "finish" << std::endl;
+                        origin = cv::Point(20, frame_height);
 
                         approachFinalFinished = true;
                         waitPassFinalStart = now;
@@ -270,28 +282,23 @@ class LineFollower{
                         float thetaLowest = lowestTheta[1];
                         float thetaBiggest = biggestTheta[1];
 
-                        if( ! isXB && delta(theta, thetaLowest) > 0.15){
-                            if(abs(rhoLowest - rho) > 2 && abs(rhoLowest - rho) < 130) {
+                        if( ! isXB && delta(theta, thetaLowest) < 0.15){
+                            if(abs(rhoLowest - rho) > 20 && abs(rhoLowest - rho) < 120) {
                                 B.setNewClosest(lowestTheta);
                                 isXB = true;
                             }
                         }
 
-                        if( ! isYPole && delta(theta, thetaBiggest) > 0.1){
-                            if(abs(rhoBiggest - rho) < 2 || abs(rhoBiggest - rho) > 130) {
-                                pole.setNewClosest(biggestTheta);
+                        if(! isYPole) pole.setNewClosest(biggestTheta);
+                        if( ! isYPole && delta(theta, thetaBiggest) < 0.15){
+                            if(abs(rhoBiggest - rho) > 15 && abs(rhoBiggest - rho) < 150) {
+                                pole.found = false;
                                 isYPole = true;
                             }
                         }
                     }
 
                     B.apply();
-                    // if(delta(B.lastTheta, 2) > 0.1) pole.apply();
-                    // if(B.found){
-                    //     if(delta(B.lastTheta, A.currentClosest[1]) > deltaABMin){
-                    //     }
-                    //     pole.apply();
-                    // }
                     
                     if(delta(B.lastTheta, pole.currentClosest[1]) > 0.1) 
                         pole.apply();
