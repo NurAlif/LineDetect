@@ -244,23 +244,49 @@ class LineFollower{
 
                     size_t lenLine = vectLines.size();
 
-                    cv::Vec2f lowestTheta = cv::Vec2f(), biggestTheta;
+                    cv::Vec2f lowestTheta = cv::Vec2f(-1, 5), 
+                    biggestTheta = cv::Vec2f(-1, -3);
+
                     for(size_t i = 0; i < lenLine; i++){
                         float rho = vectLines[i][0];
                         float theta = vectLines[i][1];
 
-                        if(theta < lowestTheta){
-                            
+                        if(theta < lowestTheta[1]){
+                            lowestTheta = vectLines[i];
                         }
 
-                        if( delta(theta, B.lastTheta) < 0.25f){
-                            B.setNewClosest(vectLines[i]);
-                            // clusterB.push_back(vectLines[i]);
+                        if(theta > biggestTheta[1]){
+                            biggestTheta = vectLines[i];
+                        }
+                    }
+
+                    // find pair 
+                    bool isXB = false, isYPole = false;
+                    for(size_t i = 0; i < lenLine; i++){
+                        float rho = vectLines[i][0];
+                        float theta = vectLines[i][1];
+                        float rhoLowest = lowestTheta[0];
+                        float rhoBiggest = biggestTheta[0];
+                        float thetaLowest = lowestTheta[1];
+                        float thetaBiggest = biggestTheta[1];
+
+                        if( ! isXB && delta(theta, thetaLowest) > 0.15){
+                            if(abs(rhoLowest - rho) > 2 && abs(rhoLowest - rho) < 130) {
+                                B.setNewClosest(lowestTheta);
+                                isXB = true;
+                            }
+                        }
+
+                        if( ! isYPole && delta(theta, thetaBiggest) > 0.1){
+                            if(abs(rhoBiggest - rho) < 2 || abs(rhoBiggest - rho) > 130) {
+                                pole.setNewClosest(biggestTheta);
+                                isYPole = true;
+                            }
                         }
                     }
 
                     B.apply();
-                    if(delta(B.lastTheta, A.currentClosest[1]) > deltaABMin) A.apply();
+                    // if(delta(B.lastTheta, 2) > 0.1) pole.apply();
                     // if(B.found){
                     //     if(delta(B.lastTheta, A.currentClosest[1]) > deltaABMin){
                     //     }
@@ -268,19 +294,16 @@ class LineFollower{
                     // }
                     
                     if(delta(B.lastTheta, pole.currentClosest[1]) > 0.1) 
-                    pole.apply();
+                        pole.apply();
 
 
-                    if(B.found) drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
-                    if(A.applied) {
-                        drawLinesFromPolar(&mat_finish, A.getVect(), origin, cv::Scalar(0,255,0));
-                    }
-                    if(pole.found)drawLinesFromPolar(&mat_finish, pole.getVect(), origin, cv::Scalar(255,255,0));
+                    if(B.applied) drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
+                    if(pole.applied)drawLinesFromPolar(&mat_finish, pole.getVect(), origin, cv::Scalar(255,255,0));
 
                     if(B.lastRho < turnMinRhoTrigger){
-                        std::cout << "triggered" << std::endl;
-                        turnFinished = true;
-                        waitPassTurnStart = now;
+                        // std::cout << "triggered" << std::endl;
+                        // turnFinished = true;
+                        // waitPassTurnStart = now;
                     }
                 }
                 break;
