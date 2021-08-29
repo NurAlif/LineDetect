@@ -29,7 +29,7 @@ class LineFollower{
             frame_width  = (int)vcap->get(cv::CAP_PROP_FRAME_WIDTH);
             frame_height = (int)vcap->get(cv::CAP_PROP_FRAME_HEIGHT);
 
-            origin = cv::Point(cvRound(frame_width/2), frame_height);
+            origin = cv::Point(cvRound(20), frame_height);
             resolutionTheta = (float)CV_PI/180;
         }
 
@@ -87,21 +87,22 @@ class LineFollower{
                 size_t lenLine = vectLines.size();
 
                 float biggestTheta = -2;
+                std::vector<cv::Vec2f> clusterA;
                 for(size_t i = 0; i < lenLine; i++){
                     float rho = vectLines[i][0];
                     float theta = vectLines[i][1];
 
-                    if(theta > 0){
-                        //pole
-                        continue;
-                    }
+                    // if(theta > 0){
+                    //     //pole
+                    //     continue;
+                    // }
 
                     if(delta(theta, B.lastTheta) < 0.4 && rho < B.currentClosest[0]){
                         B.setNewClosest(vectLines[i]);
                         continue;
                     }
 
-                    if(theta > biggestTheta && theta > -0.5){
+                    if(theta > biggestTheta){
                         A.setNewClosest(vectLines[i]);
                         biggestTheta = theta;
                         continue;
@@ -136,37 +137,51 @@ class LineFollower{
 
                     size_t lenLine = vectLines.size();
 
+                    cv::Vec2f X = cv::Vec2f(0, -2);
+
                     float biggestTheta = -2;
                     for(size_t i = 0; i < lenLine; i++){
                         float rho = vectLines[i][0];
                         float theta = vectLines[i][1];
-
-                        if(theta > 0){
-                            //pole
-                            continue;
-                        }
 
                         if(delta(theta, B.lastTheta) < 0.4 && rho < B.currentClosest[0]){
                             B.setNewClosest(vectLines[i]);
                             continue;
                         }
 
-                        if(theta > biggestTheta && theta > -0.5){
-                            A.setNewClosest(vectLines[i]);
-                            biggestTheta = theta;
-                            continue;
+                        if(theta > X[1]){
+                            X = vectLines[i];
                         }
                             
                     }
-                    
-                    A.apply();
+
+                    // A pair check
+                    bool isXA = false;
+                    for(size_t i = 0; i < lenLine; i++){
+                        float rho = vectLines[i][0];
+                        float theta = vectLines[i][1];
+
+                        if(delta(theta, X[1]) > 0.1) continue;
+
+                        if(abs(X[0] - rho) > 2 && abs(X[0] - rho) < 130) {
+                            A.setNewClosest(X);
+                            isXA = true;
+                            break;
+                        }
+                    }
+
                     B.apply();
+                    
+                    if(delta(A.currentClosest[1], B.currentClosest[1]) > 0.3)
+                        A.apply();
+
 
                     drawLinesFromPolar(&mat_finish, A.getVect(), origin, cv::Scalar(0,255,255));
                     drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
 
                     if(B.lastRho < appr2MinRhoTrigger){
                         phase = PHASE_APPROACH_FINAL;
+                        origin = cv::Point(frame_width/2, frame_height);
                     }
 
 
@@ -206,6 +221,8 @@ class LineFollower{
                     drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
 
                     if(B.lastRho < apprFinalMinRhoTrigger){
+                        std::cout << "finish" << std::endl;
+
                         approachFinalFinished = true;
                         waitPassFinalStart = now;
                     }
@@ -286,15 +303,26 @@ class LineFollower{
                     size_t lenLine = vectLines.size();
 
                     float biggestTheta = -2;
+                    std::vector<cv::Vec2f> clusterA;
                     for(size_t i = 0; i < lenLine; i++){
                         float rho = vectLines[i][0];
                         float theta = vectLines[i][1];
 
-                        if(delta(theta, A.lastTheta) < 0.4 && rho < A.currentClosest[0]){
-                            A.setNewClosest(vectLines[i]);
+                        if(delta(theta, A.lastTheta) < 0.4){
+                            clusterA.push_back(vectLines[i]);
                             continue;
                         }
                             
+                    }
+
+                    for(size_t i = 0; i < lenLine; i++){
+                        float rho = clusterA[i][0];
+                        float theta = clusterA[i][1];
+
+                        if(rho < A.currentClosest[0]){
+                            A.setNewClosest(clusterA[i]);
+                            continue;
+                        }
                     }
                     
                     A.apply();
