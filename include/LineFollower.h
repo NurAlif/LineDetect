@@ -244,25 +244,13 @@ class LineFollower{
 
                     size_t lenLine = vectLines.size();
 
-                    std::vector<cv::Vec2f> clusterB;
-
-                    float biggestTheta = -2;
+                    cv::Vec2f lowestTheta = cv::Vec2f(), biggestTheta;
                     for(size_t i = 0; i < lenLine; i++){
                         float rho = vectLines[i][0];
                         float theta = vectLines[i][1];
 
-                        float rho0 = lines[i][0];
-                        float theta0 = rho0 < 0? -lines[i][1] : lines[i][1];
-                        rho0 = abs(rho0);
-
-                        if(theta0 < thetaPoleMax && theta0 > thetaPoleMin){
-                            pole.setNewClosest(vectLines[i]);
-                            continue;
-                        }
-
-                        if(theta < 0 && theta > -1.4 && theta > biggestTheta){
-                            biggestTheta = theta;
-                            A.setNewClosest(vectLines[i]);
+                        if(theta < lowestTheta){
+                            
                         }
 
                         if( delta(theta, B.lastTheta) < 0.25f){

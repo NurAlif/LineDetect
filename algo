@@ -46,6 +46,8 @@ horizontal rho trigger: turn right, [
         if(linePole)
             away
 
+    //GET B FINAL THETA
+
     }
 ]
 
