@@ -1,9 +1,13 @@
+#ifndef UTILS_H
+#define UTILS_H
+
 #include <stdio.h>
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include "opencv2/imgproc.hpp"
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/highgui.hpp"
+#pragma once
 
 #define DELTA_COMP_RESULT_A 2
 #define DELTA_COMP_RESULT_B 1
@@ -156,3 +160,5 @@ void convertVectorFromPoint(std::vector<cv::Vec2f> src, cv::Point newPoint, std:
         result->push_back(newLine);
     }
 }
+
+#endif

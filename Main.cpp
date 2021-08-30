@@ -14,7 +14,7 @@ using namespace std;
 int main(int argc, char** argv )
 {
 
-    VideoCapture vid_capture("C:/Users/nural/Downloads/b.mp4");
+    VideoCapture vid_capture("C:/Users/nural/OneDrive/Desktop/linedetect/c.mp4");
 
     int frame_counter, frame_count;
     frame_count = cvRound(vid_capture.get(CAP_PROP_FRAME_COUNT));
