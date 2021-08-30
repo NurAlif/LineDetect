@@ -10,6 +10,7 @@ void LineFollower::prosessLines(){
             if(approach1finished){
                 if(now - waitPassMidStart > waitPassMid)
                     phase = PHASE_APPROACH_2;
+                    B.lastRho = 600;
                 break;
             }
 
@@ -60,7 +61,7 @@ void LineFollower::prosessLines(){
             drawLinesFromPolar(&mat_finish, A.getVect(), origin, cv::Scalar(0,255,255));
             drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
 
-            if(B.lastRho < appr1MinRhoTrigger){
+            if(B.applied && B.lastRho < appr1MinRhoTrigger){
                 std::cout << "approach1finished" << std::endl;
 
                 approach1finished = true;
@@ -70,9 +71,11 @@ void LineFollower::prosessLines(){
         }break;
     case PHASE_APPROACH_2:
         {
-            // if(approach1finished){
-
-            // }break;
+            if(approach2finished){
+                if(now - waitToFinalStart > waitToFinal)
+                    phase = PHASE_APPROACH_FINAL;
+                break;
+            }
 
             A.reset();
             B.reset();
@@ -122,7 +125,11 @@ void LineFollower::prosessLines(){
             drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
 
             if(B.lastRho < appr2MinRhoTrigger){
-                phase = PHASE_APPROACH_FINAL;
+                std::cout << "finish approach 2" << std::endl;
+
+                approach2finished = true;
+                waitToFinalStart = now;
+
                 origin = cv::Point(frame_width/2, frame_height);
             }
 
@@ -163,7 +170,7 @@ void LineFollower::prosessLines(){
             drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
 
             if(B.lastRho < apprFinalMinRhoTrigger){
-                std::cout << "finish" << std::endl;
+                std::cout << "finish final approach" << std::endl;
                 origin = cv::Point(20, frame_height);
 
                 approachFinalFinished = true;
@@ -194,7 +201,9 @@ void LineFollower::prosessLines(){
                 float rho = vectLines[i][0];
                 float theta = vectLines[i][1];
 
-                if(theta < lowestTheta[1]){
+                if(theta < -1.57) continue;
+
+                if(theta < lowestTheta[1] ){
                     lowestTheta = vectLines[i];
                 }
 
@@ -229,6 +238,7 @@ void LineFollower::prosessLines(){
                 }
             }
 
+
             B.apply();
             
             if(delta(B.lastTheta, pole.currentClosest[1]) > 0.1) 
@@ -238,10 +248,13 @@ void LineFollower::prosessLines(){
             if(B.applied) drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
             if(pole.applied)drawLinesFromPolar(&mat_finish, pole.getVect(), origin, cv::Scalar(255,255,0));
 
-            if(B.lastRho < turnMinRhoTrigger){
-                // std::cout << "triggered" << std::endl;
-                // turnFinished = true;
-                // waitPassTurnStart = now;
+            if( B.applied && B.lastRho < turnMinRhoTrigger){
+                std::cout << "finish turn triggered" << std::endl;
+                // std::cout <<  << std::endl;
+                // std::cout << "finish turn triggered" << std::endl;
+                turnFinished = true;
+                waitPassTurnStart = now;
+                while(true);
             }
         }
         break;

@@ -14,7 +14,7 @@ using namespace std;
 int main(int argc, char** argv )
 {
 
-    VideoCapture vid_capture("C:/Users/nural/OneDrive/Desktop/linedetect/c.mp4");
+    VideoCapture vid_capture("C:/Users/nural/Downloads/f.mp4");
 
     int frame_counter, frame_count;
     frame_count = cvRound(vid_capture.get(CAP_PROP_FRAME_COUNT));
@@ -27,7 +27,7 @@ int main(int argc, char** argv )
         cout << "  Frame count :" << frame_count;
     }
 
-    int offsetStart = 100;
+    int offsetStart = 1;
     vid_capture.set(CAP_PROP_POS_FRAMES, offsetStart);
     frame_counter = offsetStart;
 

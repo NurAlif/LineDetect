@@ -27,6 +27,8 @@ class LineFollower{
         Guide B = Guide(-1.57);
         Guide pole = Guide(0);
 
+        float output = 0;
+
 
         LineFollower(cv::VideoCapture *video){
             vcap = video;
@@ -105,36 +107,33 @@ class LineFollower{
         bool approach1finished = false;
         bool approach2finished = false;
         bool approachFinalFinished = false;
-        float appr1MinRhoTrigger = 30;
-        float appr2MinRhoTrigger = 200;
-        float apprFinalMinRhoTrigger = 30;
-        time_t waitPassMid = 5;
+        float appr1MinRhoTrigger = 150;
+        float appr2MinRhoTrigger = 300;
+        float apprFinalMinRhoTrigger = 100;
+        time_t waitPassMid = 2000;
         time_t waitPassMidStart = 0;
         time_t waitPassFinal = 2000;
         time_t waitPassFinalStart = 0;
-
+        time_t waitToFinal = 1000;
+        time_t waitToFinalStart = 0;
+        
 
         // turn arround
         float deltaABMin = 0.5;
         float thetaPoleMin = 0.15;
         float thetaPoleMax = 1.2;
-        float turnMinRhoTrigger = 40;
-        time_t waitPassTurn = 3;
+        float turnMinRhoTrigger = 200;
+        time_t waitPassTurn = 1000;
         time_t waitPassTurnStart = 0;
         bool turnFinished = false;
+
+        time_t turnDuration = 200;
 
 
         // prosess
         cv::Mat mat_input, mat_hsv, mat_hue, mat_cannyed, mat_finish;
         std::vector<cv::Vec2f> lines, vectLines;
-        cv::Point origin;
-        
-
-
-
-
-        
-
+        cv::Point origin;  
 };
 
 #endif
