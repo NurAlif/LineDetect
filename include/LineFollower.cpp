@@ -2,82 +2,34 @@
 
 void LineFollower::prosessLines(){
             
-    time_t now = time(nullptr) * 1000;
+    unsigned long long now = std::chrono::duration_cast< std::chrono::milliseconds >(
+        std::chrono::system_clock::now().time_since_epoch()
+    ).count();
+
     switch (phase)
     {
-    case PHASE_APPROACH_1:
+
+    case PHASE_READY:
         {
-            if(approach1finished){
-                if(now - waitPassMidStart > waitPassMid)
-                    phase = PHASE_APPROACH_2;
-                    B.lastRho = 600;
-                break;
-            }
+            startApprTime = now;
+            phase = PHASE_APPROACH;
+        }break;
+    case PHASE_APPROACH:
+        {
+            unsigned long long time_diff = now - startApprTime;
 
-            A.reset();
-            B.reset();
+            std::stringstream stream;
+            stream << std::fixed << time_diff;
+            cv::putText(mat_finish, stream.str(), cv::Point(3,12), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(255,255,255));
 
-            size_t lenLine = vectLines.size();
-
-            cv::Vec2f X = cv::Vec2f(0, -2);
-
-            float biggestTheta = -2;
-            for(size_t i = 0; i < lenLine; i++){
-                float rho = vectLines[i][0];
-                float theta = vectLines[i][1];
-
-                if(delta(theta, B.lastTheta) < 0.4 && rho < B.currentClosest[0]){
-                    B.setNewClosest(vectLines[i]);
-                    continue;
-                }
-
-                if(theta > X[1]){
-                    X = vectLines[i];
-                }
-                    
-            }
-
-            // A pair check
-            bool isXA = false;
-            for(size_t i = 0; i < lenLine; i++){
-                float rho = vectLines[i][0];
-                float theta = vectLines[i][1];
-
-                if(delta(theta, X[1]) > 0.15) continue;
-
-                if(abs(X[0] - rho) > 2 && abs(X[0] - rho) < 130) {
-                    A.setNewClosest(X);
-                    isXA = true;
-                    break;
-                }
-            }
-
-            B.apply();
-            
-            if(delta(A.currentClosest[1], B.currentClosest[1]) > 0.3)
-                A.apply();
-
-
-            drawLinesFromPolar(&mat_finish, A.getVect(), origin, cv::Scalar(0,255,255));
-            drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
-
-            if(B.applied && B.lastRho < appr1MinRhoTrigger){
-                std::cout << "approach1finished" << std::endl;
-
-                approach1finished = true;
-                waitPassMidStart = now;
+            if(time_diff >= apprTimeout){
+                std::cout << "apprTimeout" << std::endl;
+                phase = PHASE_APPROACH_END;
             }
 
         }break;
-    case PHASE_APPROACH_2:
+    case PHASE_APPROACH_END:
         {
-            if(approach2finished){
-                if(now - waitToFinalStart > waitToFinal)
-                    phase = PHASE_APPROACH_FINAL;
-                break;
-            }
-
-            A.reset();
             B.reset();
 
             size_t lenLine = vectLines.size();
@@ -97,165 +49,30 @@ void LineFollower::prosessLines(){
                 if(theta > X[1]){
                     X = vectLines[i];
                 }
-                    
+
             }
 
-            // A pair check
-            bool isXA = false;
-            for(size_t i = 0; i < lenLine; i++){
-                float rho = vectLines[i][0];
-                float theta = vectLines[i][1];
+            // drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(255,0,255));
+            if(abs(B.currentClosest[0] - B.lastRho) < 30)
+                drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
+                B.apply();
 
-                if(delta(theta, X[1]) > 0.15) continue;
+            if(B.applied && B.lastRho < apprMinRhoTrigger){
+                std::cout << "approach1finished" << std::endl;
 
-                if(abs(X[0] - rho) > 2 && abs(X[0] - rho) < 130) {
-                    A.setNewClosest(X);
-                    isXA = true;
-                    break;
-                }
+                // approach1finished = true;
+                // waitPassMidStart = now;
             }
-
-            B.apply();
-            
-            if(delta(A.currentClosest[1], B.currentClosest[1]) > 0.3)
-                A.apply();
-
-
-            drawLinesFromPolar(&mat_finish, A.getVect(), origin, cv::Scalar(0,255,255));
-            drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
-
-            if(B.lastRho < appr2MinRhoTrigger){
-                std::cout << "finish approach 2" << std::endl;
-
-                approach2finished = true;
-                waitToFinalStart = now;
-
-                origin = cv::Point(frame_width/2, frame_height);
-            }
-
 
         }break;
     case PHASE_APPROACH_FINAL:
         {
-            if(approachFinalFinished){
-                if(now-waitPassFinalStart > waitPassFinal){
-                    phase = PHASE_TURN_AROUND;
-                    B.lastTheta = -0.1;
-                    A.lastTheta = -0.1;
-                }
-                break;
-            }
-
-            B.reset();
-
-            size_t lenLine = vectLines.size();
-
-            float biggestTheta = -2;
-            for(size_t i = 0; i < lenLine; i++){
-                float rho = vectLines[i][0];
-                float theta = vectLines[i][1];
-
-                if(theta > 0){
-                    //pole
-                    continue;
-                }
-
-                if(delta(theta, B.lastTheta) < 0.4 && rho < B.currentClosest[0]){
-                    B.setNewClosest(vectLines[i]);
-                    continue;
-                }   
-            }
-            B.apply();
-
-            drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
-
-            if(B.lastRho < apprFinalMinRhoTrigger){
-                std::cout << "finish final approach" << std::endl;
-                origin = cv::Point(20, frame_height);
-
-                approachFinalFinished = true;
-                waitPassFinalStart = now;
-            }
+            
         }
         break;
     case PHASE_TURN_AROUND:
         {
-            if(turnFinished){
-                if(now-waitPassTurnStart > waitPassTurn){
-                    phase = PHASE_RETURN;
-                }
-                break;
-            }
 
-
-            B.reset();
-            A.reset();
-            pole.reset();
-
-            size_t lenLine = vectLines.size();
-
-            cv::Vec2f lowestTheta = cv::Vec2f(-1, 5), 
-            biggestTheta = cv::Vec2f(-1, -3);
-
-            for(size_t i = 0; i < lenLine; i++){
-                float rho = vectLines[i][0];
-                float theta = vectLines[i][1];
-
-                if(theta < -1.57) continue;
-
-                if(theta < lowestTheta[1] ){
-                    lowestTheta = vectLines[i];
-                }
-
-                if(theta > biggestTheta[1]){
-                    biggestTheta = vectLines[i];
-                }
-            }
-
-            // find pair 
-            bool isXB = false, isYPole = false;
-            for(size_t i = 0; i < lenLine; i++){
-                float rho = vectLines[i][0];
-                float theta = vectLines[i][1];
-                float rhoLowest = lowestTheta[0];
-                float rhoBiggest = biggestTheta[0];
-                float thetaLowest = lowestTheta[1];
-                float thetaBiggest = biggestTheta[1];
-
-                if( ! isXB && delta(theta, thetaLowest) < 0.15){
-                    if(abs(rhoLowest - rho) > 20 && abs(rhoLowest - rho) < 120) {
-                        B.setNewClosest(lowestTheta);
-                        isXB = true;
-                    }
-                }
-
-                if(! isYPole) pole.setNewClosest(biggestTheta);
-                if( ! isYPole && delta(theta, thetaBiggest) < 0.15){
-                    if(abs(rhoBiggest - rho) > 15 && abs(rhoBiggest - rho) < 150) {
-                        pole.found = false;
-                        isYPole = true;
-                    }
-                }
-            }
-
-
-            B.apply();
-            
-            if(delta(B.lastTheta, pole.currentClosest[1]) > 0.1) 
-                pole.apply();
-
-
-            if(B.applied) drawLinesFromPolar(&mat_finish, B.getVect(), origin, cv::Scalar(0,0,255));
-            if(pole.applied)drawLinesFromPolar(&mat_finish, pole.getVect(), origin, cv::Scalar(255,255,0));
-
-            if( B.applied && B.lastRho < turnMinRhoTrigger){
-                std::cout << "finish turn triggered" << std::endl;
-                // std::cout <<  << std::endl;
-                // std::cout << "finish turn triggered" << std::endl;
-                turnFinished = true;
-                waitPassTurnStart = now;
-                while(true);
-            }
         }
         break;
     case PHASE_RETURN:

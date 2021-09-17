@@ -27,7 +27,7 @@ int main(int argc, char** argv )
         cout << "  Frame count :" << frame_count;
     }
 
-    int offsetStart = 1;
+    int offsetStart = 30;
     vid_capture.set(CAP_PROP_POS_FRAMES, offsetStart);
     frame_counter = offsetStart;
 
@@ -60,7 +60,7 @@ int main(int argc, char** argv )
         // process
         lf.processImage(&image);
         lf.drawLines();
-        // lf.prosessLines();
+        lf.prosessLines();
 
         /*
         double pi = 3.14;
@@ -80,7 +80,7 @@ int main(int argc, char** argv )
         namedWindow("Display Image", WINDOW_AUTOSIZE );
 
         imshow("Display Image", lf.getfinishMat());
-        int key = waitKey(200);
+        int key = waitKey(20);
         if (key == 'q')
         {
             cout << "q" << endl;

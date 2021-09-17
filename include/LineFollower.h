@@ -17,8 +17,13 @@
 #define PHASE_APPROACH_1 2
 #define PHASE_APPROACH_2 3
 #define PHASE_APPROACH_FINAL 4
-#define PHASE_TURN_AROUND 5
 #define PHASE_RETURN 6
+
+#define PHASE_READY 0
+#define PHASE_APPROACH 8
+#define PHASE_APPROACH_END 9
+#define PHASE_TURN_AROUND 5
+#define PHASE_RETURN_START 10
 
 class LineFollower{
     public:
@@ -55,8 +60,8 @@ class LineFollower{
 
             Canny(mat_hue, mat_cannyed, 0, 250);
             mat_finish = mat_input.clone();
- 
-            HoughLines(mat_cannyed, lines, 1, resolutionTheta, 190, 0, 0 ); 
+  
+            HoughLines(mat_cannyed, lines, 1, resolutionTheta, 190, 0, 0, 1.57-0.5, 1.57+0.5); 
 
             convertVectorFromPoint(lines, origin, &vectLines);
 
@@ -92,7 +97,10 @@ class LineFollower{
 
     private:
         float outputTurn = 0;
-        int phase = 2;
+        int phase = PHASE_READY;
+
+        // chrono
+        unsigned long long startApprTime = 0;
 
         // detection
         float resolutionTheta;
@@ -101,38 +109,13 @@ class LineFollower{
         int frame_width = 0;
 
         // approach
-        float approachRhoTarget = 0;
-        float approachThetaTarget = 0;
-
-        bool approach1finished = false;
-        bool approach2finished = false;
-        bool approachFinalFinished = false;
-        float appr1MinRhoTrigger = 150;
-        float appr2MinRhoTrigger = 300;
-        float apprFinalMinRhoTrigger = 100;
-        time_t waitPassMid = 2000;
-        time_t waitPassMidStart = 0;
-        time_t waitPassFinal = 2000;
-        time_t waitPassFinalStart = 0;
-        time_t waitToFinal = 1000;
-        time_t waitToFinalStart = 0;
-        
-
-        // turn arround
-        float deltaABMin = 0.5;
-        float thetaPoleMin = 0.15;
-        float thetaPoleMax = 1.2;
-        float turnMinRhoTrigger = 200;
-        time_t waitPassTurn = 1000;
-        time_t waitPassTurnStart = 0;
-        bool turnFinished = false;
-
-        time_t turnDuration = 200;
+        float apprMinRhoTrigger = 200;
+        float apprTimeout = 5000;
 
 
         // prosess
         cv::Mat mat_input, mat_hsv, mat_hue, mat_cannyed, mat_finish;
-        std::vector<cv::Vec2f> lines, vectLines;
+        std::vector<cv::Vec2f> lines, vectLines, lines2,  vectLines2;
         cv::Point origin;  
 };
 
