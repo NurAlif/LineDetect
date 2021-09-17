@@ -53,10 +53,10 @@ class LineFollower{
             split(mat_hsv, channels);
             mat_hue = channels[1];
 
-            Canny(mat_hue, mat_cannyed, 10, 200);
+            Canny(mat_hue, mat_cannyed, 0, 250);
             mat_finish = mat_input.clone();
  
-            HoughLines(mat_cannyed, lines, 1, resolutionTheta, 150, 0, 0 ); 
+            HoughLines(mat_cannyed, lines, 1, resolutionTheta, 190, 0, 0 ); 
 
             convertVectorFromPoint(lines, origin, &vectLines);
 
@@ -135,5 +135,9 @@ class LineFollower{
         std::vector<cv::Vec2f> lines, vectLines;
         cv::Point origin;  
 };
+
+
+
+
 
 #endif
